@@ -3,6 +3,9 @@ build/
 local.properties
 *.jks
 *.keystore
+*.apk
+*.aab
+google-services.json
 
 # IDE
 .idea/

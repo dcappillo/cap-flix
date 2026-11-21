@@ -28,8 +28,9 @@ class Session(context: Context) {
         get() = prefs.getString("token", "") ?: ""
         set(v) = prefs.edit().putString("token", v).apply()
 
+    // Read from both the OkHttp thread and main: synchronized so only one ID is ever generated.
     val deviceId: String
-        get() = prefs.getString("deviceId", null) ?: UUID.randomUUID().toString().also {
+        @Synchronized get() = prefs.getString("deviceId", null) ?: UUID.randomUUID().toString().also {
             prefs.edit().putString("deviceId", it).apply()
         }
 

@@ -11,6 +11,9 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.derek.capflix.data.Jellyfin
 import com.derek.capflix.data.Session
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class CapFlixApp : Application(), SingletonImageLoader.Factory {
     lateinit var session: Session
@@ -45,5 +48,8 @@ class CapFlixApp : Application(), SingletonImageLoader.Factory {
             private set
         val api get() = instance.api
         val session get() = instance.session
+
+        /** Fire-and-forget work that must outlive any one screen (e.g. stop reports). */
+        val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 }

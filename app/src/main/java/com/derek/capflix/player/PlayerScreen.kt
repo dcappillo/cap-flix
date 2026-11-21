@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -67,7 +66,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.derek.capflix.CapFlixApp
 import com.derek.capflix.ui.settings.QUALITY_OPTIONS
 import com.derek.capflix.ui.theme.Bolt
 import com.derek.capflix.ui.theme.Cream
@@ -360,6 +358,3 @@ private fun clock(ms: Long): String {
     val h = t / 3600; val m = (t % 3600) / 60; val s = t % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }
-
-@Suppress("unused")
-private val keepCapFlixAppLinked = CapFlixApp::class

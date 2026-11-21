@@ -225,7 +225,8 @@ fun HomeScreen(
             state.error != null -> ErrorState(state.error!!) { vm.load() }
             else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                 item { state.hero?.let { Billboard(it, openItem, play, vm::toggleFavorite) } ?: Spacer(Modifier.height(110.dp)) }
-                items(state.rows, key = { it.title }) { row ->
+                // Genre titles come from the server and can match a fixed row ("My List"): key them apart.
+                items(state.rows, key = { r -> r.more?.takeIf { it.startsWith("genre:") } ?: r.title }) { row ->
                     RowSection(
                         row.title, row.items, landscape = row.landscape,
                         onMore = row.more?.let { m -> { openMore(m, filter) } },

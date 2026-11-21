@@ -124,7 +124,7 @@ fun PosterCard(item: Item, width: Dp = 112.dp, onClick: () -> Unit) {
 
 /** 16:9 card with a play badge and progress: Continue Watching, episodes. */
 @Composable
-fun LandscapeCard(item: Item, width: Dp = 230.dp, showSeries: Boolean = true, onClick: () -> Unit) {
+fun LandscapeCard(item: Item, width: Dp = 230.dp, onClick: () -> Unit) {
     val api = CapFlixApp.api
     Column(Modifier.width(width).clickable(onClick = onClick)) {
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(6.dp))) {
@@ -136,11 +136,11 @@ fun LandscapeCard(item: Item, width: Dp = 230.dp, showSeries: Boolean = true, on
             if (item.progress > 0f) ProgressBar(item.progress, Modifier.align(Alignment.BottomCenter))
         }
         Spacer(Modifier.height(6.dp))
-        val title = if (item.isEpisode && showSeries) item.seriesName ?: item.name else item.name
+        val title = if (item.isEpisode) item.seriesName ?: item.name else item.name
         Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (item.isEpisode) {
             Text(
-                listOf(item.episodeCode, if (showSeries) item.name else null).filterNotNull().joinToString(" · "),
+                listOf(item.episodeCode, item.name).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         } else {

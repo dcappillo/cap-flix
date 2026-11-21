@@ -12,22 +12,18 @@ data class Item(
     @SerialName("ProductionYear") val year: Int? = null,
     @SerialName("PremiereDate") val premiereDate: String? = null,
     @SerialName("EndDate") val endDate: String? = null,
-    @SerialName("Status") val status: String? = null,
     @SerialName("Overview") val overview: String? = null,
     @SerialName("Taglines") val taglines: List<String> = emptyList(),
     @SerialName("CommunityRating") val rating: Double? = null,
-    @SerialName("CriticRating") val criticRating: Double? = null,
     @SerialName("OfficialRating") val officialRating: String? = null,
     @SerialName("RunTimeTicks") val runTimeTicks: Long? = null,
     @SerialName("Genres") val genres: List<String> = emptyList(),
     @SerialName("SeriesId") val seriesId: String? = null,
     @SerialName("SeriesName") val seriesName: String? = null,
     @SerialName("SeasonId") val seasonId: String? = null,
-    @SerialName("SeasonName") val seasonName: String? = null,
     @SerialName("IndexNumber") val indexNumber: Int? = null,
     @SerialName("IndexNumberEnd") val indexNumberEnd: Int? = null,
     @SerialName("ParentIndexNumber") val parentIndexNumber: Int? = null,
-    @SerialName("ChildCount") val childCount: Int? = null,
     @SerialName("ImageTags") val imageTags: Map<String, String> = emptyMap(),
     @SerialName("BackdropImageTags") val backdropTags: List<String> = emptyList(),
     @SerialName("ParentBackdropItemId") val parentBackdropItemId: String? = null,
@@ -40,10 +36,8 @@ data class Item(
     @SerialName("PrimaryImageAspectRatio") val primaryAspect: Double? = null,
     @SerialName("UserData") val userData: UserData? = null,
     @SerialName("People") val people: List<Person> = emptyList(),
-    @SerialName("Studios") val studios: List<NameId> = emptyList(),
     @SerialName("MediaSources") val mediaSources: List<MediaSource> = emptyList(),
     @SerialName("MediaStreams") val mediaStreams: List<MediaStream> = emptyList(),
-    @SerialName("LocationType") val locationType: String? = null,
     @SerialName("CollectionType") val collectionType: String? = null,
 ) {
     val isSeries get() = type == "Series"
@@ -94,11 +88,9 @@ data class Item(
 @Serializable
 data class UserData(
     @SerialName("PlaybackPositionTicks") val positionTicks: Long = 0,
-    @SerialName("PlayedPercentage") val playedPercentage: Double? = null,
     @SerialName("Played") val played: Boolean = false,
     @SerialName("IsFavorite") val isFavorite: Boolean = false,
     @SerialName("UnplayedItemCount") val unplayedCount: Int? = null,
-    @SerialName("PlayCount") val playCount: Int = 0,
 )
 
 @Serializable
@@ -108,12 +100,6 @@ data class Person(
     @SerialName("Role") val role: String? = null,
     @SerialName("Type") val type: String? = null,
     @SerialName("PrimaryImageTag") val primaryTag: String? = null,
-)
-
-@Serializable
-data class NameId(
-    @SerialName("Id") val id: String = "",
-    @SerialName("Name") val name: String = "",
 )
 
 @Serializable
@@ -136,14 +122,12 @@ data class MediaStream(
     @SerialName("Title") val title: String? = null,
     @SerialName("DisplayTitle") val displayTitle: String? = null,
     @SerialName("Profile") val profile: String? = null,
-    @SerialName("IsDefault") val isDefault: Boolean = false,
     @SerialName("IsForced") val isForced: Boolean = false,
     @SerialName("IsExternal") val isExternal: Boolean = false,
     @SerialName("IsTextSubtitleStream") val isText: Boolean = false,
     @SerialName("Width") val width: Int? = null,
     @SerialName("Height") val height: Int? = null,
     @SerialName("Channels") val channels: Int? = null,
-    @SerialName("VideoRange") val videoRange: String? = null,
     @SerialName("VideoRangeType") val videoRangeType: String? = null,
     @SerialName("BitRate") val bitrate: Long? = null,
 )

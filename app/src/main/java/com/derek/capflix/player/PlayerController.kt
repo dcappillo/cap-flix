@@ -20,12 +20,14 @@ import com.derek.capflix.data.MediaSource
 import com.derek.capflix.data.MediaStream
 import com.derek.capflix.data.PlaybackReport
 import com.derek.capflix.data.Segment
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -118,11 +120,14 @@ class PlayerController(private val context: Context) {
     private var burnSubIndex: Int? = null
     private var tracksApplied = false
     private var triedFallback = false
+    private var forceTranscode = false   // direct play failed for this item: always transcode
     private var creditsDismissed = false
     private var reportJob: Job? = null
     private var countdownJob: Job? = null
+    private var loadJob: Job? = null
     private var introSkipped = false
     private var layout: VLCVideoLayout? = null
+    private var released = false
 
     init {
         player.setEventListener { e ->
@@ -142,6 +147,7 @@ class PlayerController(private val context: Context) {
 
     /** Re-bind VLC to the video view after the window changes size (PiP in/out). */
     fun reattach() {
+        if (released) return   // posted from the activity; may run after onDestroy
         val v = layout ?: return
         runCatching { player.detachViews() }
         player.attachViews(v, null, true, false)
@@ -157,7 +163,8 @@ class PlayerController(private val context: Context) {
     // ---- loading -------------------------------------------------------------
 
     fun open(itemId: String, mediaSourceId: String?) {
-        scope.launch {
+        loadJob?.cancel()
+        loadJob = scope.launch {
             try {
                 var it = api.item(itemId)
                 if (it.isSeries) { // "Play" on a show: next up, else the first episode
@@ -168,6 +175,8 @@ class PlayerController(private val context: Context) {
                     it = api.item(ep.id)
                 }
                 start(it, mediaSourceId, resumeTicks = it.userData?.positionTicks ?: 0L)
+            } catch (e: CancellationException) {
+                throw e   // superseded by a newer open()/playNext(): not an error
             } catch (e: Exception) {
                 error = e.message ?: "Couldn't load this title."
                 buffering = false
@@ -183,7 +192,7 @@ class PlayerController(private val context: Context) {
         title = if (it.isEpisode) it.seriesName ?: it.name else it.name
         subtitle = if (it.isEpisode) "${it.episodeCode}  ${it.name}" else listOfNotNull(it.year?.toString(), it.officialRating).joinToString(" · ")
         tracksApplied = false; introSkipped = false; creditsDismissed = false; showNextCard = false; finished = false
-        audioStreamIndex = null; burnSubIndex = null; triedFallback = false; wantAudio = null; wantSub = null
+        audioStreamIndex = null; burnSubIndex = null; triedFallback = false; forceTranscode = false; wantAudio = null; wantSub = null
         next = null; segments = emptyList()
         playSessionId = UUID.randomUUID().toString()
         val len = it.runTimeTicks ?: 0L
@@ -191,8 +200,16 @@ class PlayerController(private val context: Context) {
         load(startMs)
         report("start")
         startReporting()
-        scope.launch { segments = api.segments(it.id) }
-        if (it.isEpisode) scope.launch { next = runCatching { api.nextEpisode(it) }.getOrNull() }
+        coroutineScope {
+            launch {
+                val s = runCatching { api.segments(it.id) }.getOrDefault(emptyList())
+                if (item?.id == it.id) segments = s
+            }
+            if (it.isEpisode) launch {
+                val n = runCatching { api.nextEpisode(it) }.getOrNull()
+                if (item?.id == it.id) next = n
+            }
+        }
     }
 
     /** Decide direct play vs transcode and hand the URL to VLC. */
@@ -201,7 +218,7 @@ class PlayerController(private val context: Context) {
         val ms = source ?: return
         val dv = needsDolbyVisionFix(ms)
         val cap = effectiveCap()
-        val direct = !dv && (cap == Long.MAX_VALUE || (ms.bitrate != null && ms.bitrate <= cap))
+        val direct = !dv && !forceTranscode && (cap == Long.MAX_VALUE || (ms.bitrate != null && ms.bitrate <= cap))
         transcoding = !direct
         if (!direct && audioStreamIndex == null) {
             // The server picks the file's default track (often Italian on ITA/ENG releases); ask for ours.
@@ -406,7 +423,7 @@ class PlayerController(private val context: Context) {
     fun togglePlay() { if (player.isPlaying) player.pause() else { player.play(); requestAudioFocus() } }
     fun pause() { if (player.isPlaying) player.pause() }
     fun seekTo(ms: Long) {
-        val t = ms.coerceIn(0, if (lengthMs > 0) lengthMs - 1000 else Long.MAX_VALUE)
+        val t = ms.coerceIn(0, if (lengthMs > 0) (lengthMs - 1000).coerceAtLeast(0) else Long.MAX_VALUE)
         player.setTime(t)
         timeMs = t
     }
@@ -452,10 +469,17 @@ class PlayerController(private val context: Context) {
     fun playNext(n: Item? = next) {
         n ?: return
         countdownJob?.cancel(); countdown = 0
-        scope.launch {
+        loadJob?.cancel()
+        loadJob = scope.launch {
             report("stop")
             if (transcoding) api.stopTranscode(playSessionId)
-            val full = runCatching { api.item(n.id) }.getOrNull() ?: return@launch
+            val full = try {
+                api.item(n.id)
+            } catch (e: CancellationException) {
+                throw e   // superseded by a newer open()/playNext(): not an error
+            } catch (e: Exception) {
+                null
+            } ?: return@launch
             start(full, null, resumeTicks = 0L)
         }
     }
@@ -472,6 +496,7 @@ class PlayerController(private val context: Context) {
         if (!transcoding && !triedFallback) {
             // The original file wouldn't stream: let the server convert it instead.
             triedFallback = true
+            forceTranscode = true
             quality = 20_000_000L
             reload()
         } else {
@@ -532,8 +557,9 @@ class PlayerController(private val context: Context) {
         val body = reportBody()
         val tc = transcoding
         val psid = playSessionId
-        // Fire-and-forget on a scope that outlives this controller.
-        CoroutineScope(Dispatchers.IO).launch {
+        val api = this.api   // local copy so the coroutine doesn't hold onto this controller
+        // Fire-and-forget on the app-level scope, which outlives this controller.
+        CapFlixApp.appScope.launch {
             body?.let { api.reportStop(it) }
             if (tc) api.stopTranscode(psid)
         }
@@ -541,7 +567,9 @@ class PlayerController(private val context: Context) {
     }
 
     fun release() {
+        released = true
         scope.cancel()
+        player.setEventListener(null)   // no late VLC events mutating state after teardown
         runCatching { player.stop() }
         runCatching { player.detachViews() }
         player.release()
