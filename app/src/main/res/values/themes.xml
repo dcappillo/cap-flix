@@ -1,0 +1,16 @@
+<resources>
+    <color name="night">#FF0B0B0E</color>
+    <color name="bolt">#FFFFD23F</color>
+
+    <style name="Theme.CapFlix" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/night</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.CapFlix.Player" parent="Theme.CapFlix">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

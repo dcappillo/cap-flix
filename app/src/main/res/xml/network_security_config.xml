@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Jellyfin on your PC speaks plain http. That's fine over Tailscale (encrypted
+  end to end) and on your home Wi-Fi. The app itself refuses http for any other
+  address (see data/Session.kt: isSafeServer).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

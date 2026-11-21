@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cap Flix mark: a marquee-yellow screen with a play triangle split by a lightning bolt. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- screen -->
+    <path android:fillColor="#FFD23F"
+        android:pathData="M30,34h48a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-48a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z" />
+    <!-- play triangle -->
+    <path android:fillColor="#0B0B0E" android:pathData="M47,42L67,54L47,66Z" />
+    <!-- bolt cutting through -->
+    <path android:fillColor="#FF5A36" android:pathData="M58,30L48,52H56L50,78L66,48H57L63,30Z" />
+    <path android:fillColor="#F4F1EA" android:pathData="M57,33L50,50H57L53,68L62,50H55L60,33Z" />
+</vector>
